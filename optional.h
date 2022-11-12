@@ -4,34 +4,37 @@
 #include <cassert>
 
 // Исключение этого типа должно генерироватся при обращении к пустому optional
-class BadOptionalAccess : public std::exception {
+class BadOptionalAccess : public std::exception
+{
 public:
     using exception::exception;
 
-    virtual const char* what() const noexcept override {
+    virtual const char *what() const noexcept override
+    {
         return "Bad optional access";
     }
 };
 
 template <typename T>
-class Optional {
+class Optional
+{
 public:
     Optional()
     {
     }
-    Optional(const T& value)
+    Optional(const T &value)
         : is_initialized_{true}
     {
         new (data_) T(value);
     }
 
-    Optional(T&& value)
+    Optional(T &&value)
         : is_initialized_{true}
     {
         new (data_) T(std::move(value));
     }
 
-    Optional(const Optional& other)
+    Optional(const Optional &other)
     {
         if (is_initialized_ && other.is_initialized_)
         {
@@ -45,32 +48,31 @@ public:
         else if (other.is_initialized_)
         {
             is_initialized_ = true;
-            new(data_)T(other.Value());
-
+            new (data_) T(other.Value());
         }
     }
 
-    Optional(Optional&& other)
+    Optional(Optional &&other)
     {
         new (data_) T(std::move(other.Value()));
         is_initialized_ = true;
-//        other.is_initialized_ = false;
+        //        other.is_initialized_ = false;
     }
 
-    Optional& operator=(const T& value)
+    Optional &operator=(const T &value)
     {
         is_initialized_ = true;
         new (data_) T(value);
         return *this;
     }
-    Optional& operator=(T&& rhs)
+    Optional &operator=(T &&rhs)
     {
         is_initialized_ = true;
         new (data_) T(std::move(rhs));
         return *this;
     }
 
-    Optional& operator=(const Optional& other)
+    Optional &operator=(const Optional &other)
     {
         if (this != &other)
         {
@@ -86,13 +88,13 @@ public:
             else if (other.is_initialized_)
             {
                 is_initialized_ = true;
-                new(data_)T(other.Value());
+                new (data_) T(other.Value());
             }
         }
         return *this;
     }
 
-    Optional& swap(Optional& other)
+    Optional &swap(Optional &other)
     {
         if (is_initialized_ && other.is_initialized_)
         {
@@ -106,13 +108,13 @@ public:
         }
         else if (other.is_initialized_)
         {
-            new(data_)T(other.Value());
+            new (data_) T(other.Value());
             other.Value().~T();
             std::swap(is_initialized_, other.is_initialized_);
         }
     }
 
-    Optional& operator=(Optional&& other)
+    Optional &operator=(Optional &&other)
     {
         if (this != &other)
         {
@@ -129,7 +131,7 @@ public:
             else if (other.is_initialized_)
             {
                 is_initialized_ = true;
-                new(data_)T(std::move(other.Value()));
+                new (data_) T(std::move(other.Value()));
                 other.is_initialized_ = false;
             }
         }
@@ -138,7 +140,8 @@ public:
 
     ~Optional()
     {
-        if (is_initialized_) {
+        if (is_initialized_)
+        {
             Value().~T(); // destroy the T
             is_initialized_ = false;
         }
@@ -151,39 +154,41 @@ public:
 
     // Операторы * и -> не должны делать никаких проверок на пустоту Optional.
     // Эти проверки остаются на совести программиста
-    T& operator*()
+    T &operator*()
     {
-        return reinterpret_cast<T&>(*data_);
+        return reinterpret_cast<T &>(*data_);
     }
 
-    const T& operator*() const
+    const T &operator*() const
     {
-        return reinterpret_cast<T&>(*data_);
+        return reinterpret_cast<const T &>(*data_);
     }
 
-    T* operator->()
+    T *operator->()
     {
-        return reinterpret_cast<T*>(data_);
+        return reinterpret_cast<T *>(data_);
     }
-    const T* operator->() const
+    const T *operator->() const
     {
-        return reinterpret_cast<T*>(data_);
+        return reinterpret_cast<const T *>(data_);
     }
 
     // Метод Value() генерирует исключение BadOptionalAccess, если Optional пуст
-    T& Value()
+    T &Value()
     {
-        if (!is_initialized_) {
+        if (!is_initialized_)
+        {
             throw BadOptionalAccess{};
         }
-        return reinterpret_cast<T&>(*data_);
+        return reinterpret_cast<T &>(*data_);
     }
-    const T& Value() const
+    const T &Value() const
     {
-        if (!is_initialized_) {
+        if (!is_initialized_)
+        {
             throw BadOptionalAccess{};
         }
-        return reinterpret_cast<const T&>(*data_);
+        return reinterpret_cast<const T &>(*data_);
     }
 
     void Reset()
