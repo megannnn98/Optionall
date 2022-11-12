@@ -194,6 +194,8 @@ void TestReset() {
     }
 }
 
+#include <iostream>
+
 int main() {
     try {
         TestInitialization();
@@ -204,4 +206,5 @@ int main() {
     } catch (...) {
         assert(false);
     }
+    std::cout << "tests passed" << std::endl;
 }

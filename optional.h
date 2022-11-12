@@ -19,9 +19,8 @@ template <typename T>
 class Optional
 {
 public:
-    Optional()
-    {
-    }
+    Optional() = default;
+
     Optional(const T &value)
         : is_initialized_{true}
     {
@@ -42,33 +41,44 @@ public:
         }
         else if (is_initialized_)
         {
-            is_initialized_ = false;
             Value().~T();
+            is_initialized_ = false;
         }
         else if (other.is_initialized_)
         {
-            is_initialized_ = true;
             new (data_) T(other.Value());
+            is_initialized_ = true;
         }
     }
 
     Optional(Optional &&other)
     {
-        new (data_) T(std::move(other.Value()));
-        is_initialized_ = true;
-        //        other.is_initialized_ = false;
+        if (is_initialized_ && other.is_initialized_)
+        {
+            Value() = std::move(other.Value());
+        }
+        else if (is_initialized_)
+        {
+            Value().~T();
+            is_initialized_ = false;
+        }
+        else if (other.is_initialized_)
+        {
+            new (data_) T(std::move(other.Value()));
+            is_initialized_ = true;
+        }
     }
 
     Optional &operator=(const T &value)
     {
-        is_initialized_ = true;
         new (data_) T(value);
+        is_initialized_ = true;
         return *this;
     }
     Optional &operator=(T &&rhs)
     {
-        is_initialized_ = true;
         new (data_) T(std::move(rhs));
+        is_initialized_ = true;
         return *this;
     }
 
@@ -87,31 +97,11 @@ public:
             }
             else if (other.is_initialized_)
             {
-                is_initialized_ = true;
                 new (data_) T(other.Value());
+                is_initialized_ = true;
             }
         }
         return *this;
-    }
-
-    Optional &swap(Optional &other)
-    {
-        if (is_initialized_ && other.is_initialized_)
-        {
-            std::swap(Value(), other.Value());
-        }
-        else if (is_initialized_)
-        {
-            other.Value() = std::move(Value());
-            Value().~T();
-            std::swap(is_initialized_, other.is_initialized_);
-        }
-        else if (other.is_initialized_)
-        {
-            new (data_) T(other.Value());
-            other.Value().~T();
-            std::swap(is_initialized_, other.is_initialized_);
-        }
     }
 
     Optional &operator=(Optional &&other)
@@ -130,8 +120,8 @@ public:
             }
             else if (other.is_initialized_)
             {
-                is_initialized_ = true;
                 new (data_) T(std::move(other.Value()));
+                is_initialized_ = true;
                 other.is_initialized_ = false;
             }
         }
