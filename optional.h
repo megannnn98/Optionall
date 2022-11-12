@@ -35,16 +35,7 @@ public:
 
     Optional(const Optional &other)
     {
-        if (is_initialized_ && other.is_initialized_)
-        {
-            Value() = other.Value();
-        }
-        else if (is_initialized_)
-        {
-            Value().~T();
-            is_initialized_ = false;
-        }
-        else if (other.is_initialized_)
+        if (other.is_initialized_)
         {
             new (data_) T(other.Value());
             is_initialized_ = true;
@@ -53,16 +44,7 @@ public:
 
     Optional(Optional &&other)
     {
-        if (is_initialized_ && other.is_initialized_)
-        {
-            Value() = std::move(other.Value());
-        }
-        else if (is_initialized_)
-        {
-            Value().~T();
-            is_initialized_ = false;
-        }
-        else if (other.is_initialized_)
+        if (other.is_initialized_)
         {
             new (data_) T(std::move(other.Value()));
             is_initialized_ = true;
