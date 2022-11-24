@@ -19,6 +19,22 @@ template <typename T>
 class Optional
 {
 public:
+    template <typename... ArgsT>
+    void Construct(ArgsT &&...Args)
+    {
+        assert(!HasValue());
+        new (data_) T(std::forward<ArgsT>(Args)...);
+        is_initialized_ = true;
+    }
+
+    template <typename... Ts>
+    T &Emplace(Ts &&...vs)
+    {
+        Reset();
+        Construct(std::forward<Ts>(vs)...);
+        return Value();
+    }
+
     Optional() = default;
 
     Optional(const T &value)
@@ -53,13 +69,25 @@ public:
 
     Optional &operator=(const T &value)
     {
-        new (data_) T(value);
+        if (is_initialized_) {
+            Value() = value;            
+        }
+        else {
+            new (data_) T(value);
+        }
         is_initialized_ = true;
+
         return *this;
     }
-    Optional &operator=(T &&rhs)
+
+    Optional &operator=(T &&value)
     {
-        new (data_) T(std::move(rhs));
+        if (is_initialized_) {
+            Value() = std::move(value);            
+        }
+        else {
+            new (data_) T(std::move(value));
+        }        
         is_initialized_ = true;
         return *this;
     }
@@ -124,8 +152,6 @@ public:
         return is_initialized_;
     }
 
-    // Операторы * и -> не должны делать никаких проверок на пустоту Optional.
-    // Эти проверки остаются на совести программиста
     T &operator*()
     {
         return reinterpret_cast<T &>(*data_);
@@ -145,7 +171,6 @@ public:
         return reinterpret_cast<const T *>(data_);
     }
 
-    // Метод Value() генерирует исключение BadOptionalAccess, если Optional пуст
     T &Value()
     {
         if (!is_initialized_)
@@ -165,7 +190,11 @@ public:
 
     void Reset()
     {
-        is_initialized_ = false;
+        if (is_initialized_)
+        {
+            Value().~T(); // destroy the T
+            is_initialized_ = false;
+        }
     }
 
 private:
